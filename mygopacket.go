@@ -171,11 +171,18 @@ func main() {
 	// Save the data to RAM or HDD and decrypt/encrypt data for password recovery.
 	// The password recovery can be with or without ARP Poisoning, but should be if
 	// you intend to let the AP decrypt the data for you.
+	
 	// The encrypt/decrypt AI is going to be tricky. I have a file of
 	// 500 most common passwords & files with months, years & dates + 
 	// 50 most used baby names, these should work as a 1st option cracking,
 	// along with some dumbass passwords like "god" or "sexy".
 	// You know, just have fun implementing an AI cracker, and notify me if you have an idea.
+	
+	// Encryption is for encrypting html tags with different passwords & IV's,
+	// and see if the encryption matches a string in the payload from packets
+	
+	// I don't excatly know yet how wpa2 encryption works, but hopefully wpa2crypt.go will
+	// work, of course with a loop to go through different passwords & IV's.
 	
 	// Start a packet capture on port 80.
 	// Capture 5000 packets & decrypt dump.
