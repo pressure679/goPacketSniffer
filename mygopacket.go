@@ -167,6 +167,9 @@ func main() {
 	// Encryption is for encrypting html tags with different passwords & IV's,
 	// and see if the encryption matches a string in the payload from packets
 	
+	// You should either decrypt or encrypt, up to you,
+	// I'm going to test both and see which one is faster.
+	
 	// I don't excatly know yet how wpa2 encryption works, but hopefully wpa2crypt.go will
 	// work, of course with a loop to go through different passwords & IV's.
 	
