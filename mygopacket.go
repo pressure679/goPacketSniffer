@@ -121,122 +121,131 @@ func main() {
 		}
 	}
 
+	// For testing
+	var lc = flag.Bool("local", false, "Cap on local port")
+	flag.Parse()
+	// Code from here
+	
+
 	// sort newmacs.mac by using newmacs.occurence
 	// delete least occuring newmacs.mac that
 	// are newmacs.related to a high occuring newmacs.mac
-	var nummacs uint8
-	sort.Sort(mysort(mymacs))
-	for x := 99; x >= 0; x-- {
-		if mymacs[x].mac == "" {
-			continue
-		} else {
-			nummacs = uint8(x)
-		}
-		for y := 0; y < 100; y++ {
-			if mymacs[x].mac == mymacs[y].related {
-				for i := y; i < 
-				mymacs[y].mac = ""
-				mymacs[y].related = ""
-				mymacs[y].occurence = -1
+	if *lc != true {
+		var nummacs uint8
+		sort.Sort(mysort(mymacs))
+		for x := 99; x >= 0; x-- {
+			if mymacs[x].mac == "" {
+				continue
+			} else {
+				nummacs = uint8(x)
+			}
+			for y := 0; y < 100; y++ {
+				if mymacs[x].mac == mymacs[y].related {
+					for i := y; i < 99; i++ {
+						mymacs[y].mac = mymacs[y - 1].mac
+						mymacs[y].related = mymacs[y - 1].related
+						mymacs[y].occurence = mymacs[y - 1].occurence
+					}
+				}
+				// Print mac units by occurence
+				fmt.Println(x, " ", mymacs[x].mac)
 			}
 		}
-		// Print mac units by occurence
-		fmt.Println(x, " ", mymacs[x].mac)
-	}
 
-	// Choose which mac(s) to capture packets from
-	var nummacstocap uint8
-	var chosenmacs []uint8
-	fmt.Printf("Select number of macs to capture: ")
-	fmt.Scanf("%d", nummacstocap)
-	for x := 0; x <= int(nummacstocap); x++ {
-		fmt.Printf("Choose which mac to capture from ")
-		fmt.Scanf("%d", chosenmacs[x])
+		// Choose which mac(s) to capture packets from
+		var nummacstocap uint8
+		var chosenmacs []uint8
+		fmt.Printf("Select number of macs to capture: ")
+		fmt.Scanf("%d", nummacstocap)
+		for x := 0; x <= int(nummacstocap); x++ {
+			fmt.Printf("Choose which mac(s) to capture from ")
+			fmt.Scanf("%d", chosenmacs[x])
+		}
+		for x := 0; x <= len(chosenmacs); x++ {
+			
+		}
 	}
-
 	// Start a packet capture on port 80.
 	// Capture 5000 packets & decrypt dump.
 	// Found password/key is stored in txt file.
 	if err0 != nil {
 		panic(err0)
 	}
-
-	v
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-		for packet := range packetSource.Packets() { 
-			if *ipbool == true {
-				if iplayer := packet.Layer(layers.LayerTypeIPv4); iplayer != nil {
-					ip4, _ := iplayer.(*layers.IPv4)
-				fmt.Printf("%d\t%d\t\t%d\n", ip4.SrcIP.String(), ip4.TTL, ip4.DstIP.String())
+	for packet := range packetSource.Packets() { 
+		if ethlayer := packet.Layer(layers.LayerTypeEthernet); ethlayer != nil {
+			eth, _ := ethlayer.(*layers.Ethernet)
+			for x := 0; x <= int(nummacstocap); x++ {
+				if eth.SrcMAC.String() == || eth.DstMAC.String()
+				fmt.Printf("%d\t\t%d\n", eth.SrcMAC.String(), eth.DstMAC.String())
+			}
+			if tcplayer := packet.Layer(layers.LayerTypeTCP); tcplayer != nil {
+				// Get actual TCP data from this layer
+				tcp, _ := tcplayer.(*layers.TCP)
+				fmt.Printf("TCP: %d\t\t%d\t%d\n", tcp.SrcPort, tcp.DstPort)
+			} else if udplayer := packet.Layer(layers.LayerTypeUDP); udplayer != nil {
+				udp, _ := udplayer.(*layers.UDP)
+				fmt.Printf("UDP: %d\t\t%d\t%d\n", udp.SrcPort, udp.DstPort)
+				if applayer := packet.ApplicationLayer(); applayer != nil {
+					// fmt.Println("payload: ", hex.Dump(applayer.Payload()))
+					fmt.Println("payload: ", hex.Dump(applayer.Payload()))
 				}
-				if *portbool == true {
-					if tcplayer := packet.Layer(layers.LayerTypeTCP); tcplayer != nil {
-						// Get actual TCP data from this layer
-						tcp, _ := tcplayer.(*layers.TCP)
-						fmt.Printf("TCP: %d\t\t%d\t%d\n", tcp.SrcPort, tcp.DstPort)
-					} else if udplayer := packet.Layer(layers.LayerTypeUDP); udplayer != nil {
-						udp, _ := udplayer.(*layers.UDP)
-						fmt.Printf("UDP: %d\t\t%d\t%d\n", udp.SrcPort, udp.DstPort)
-					}
-				}
-				if *ethernetbool == true {
-					if ethlayer := packet.Layer(layers.LayerTypeEthernet); ethlayer != nil {
-						eth, _ := ethlayer.(*layers.Ethernet)
-						fmt.Printf("%d\t\t%d\n", eth.SrcMA,.String(), eth.DstMAC.String())
-					}
-				}
-				if *arpbool == true {
-					if arplayer := packet.Layer(layers.LayerTypeARP); arplayer != nil {
-						fmt.Println("This is in ARP packet!")
-						arp, _ := arplayer.(*layers.ARP)
-						fmt.Printf("From src MAC %d port %d\nto dst MAC %d port %d", arp.SourceHwAddress, arp.SourceProtAddress, arp.DstHwAddress, arp.DstProtAddress)
-						fmt.Println("-\t-\t-\t-\t-")
-					}
-				}
-				if *payloadbool == true {
-					if applayer := packet.ApplicationLayer(); applayer != nil {
-						// fmt.Println("payload: ", hex.Dump(applayer.Payload()))
-						fmt.Println("payload: ", hex.Dump(applayer.Payload()))
-					}
-				}
-				if *icmpv4bool == true {
-					if icmpv4layer := packet.Layer(layers.LayerTypeICMPv4); icmpv4layer != nil {
-						icmp, _ := icmpv4layer.(*layers.ICMPv4)
-						fmt.Println(icmp)
-					}
-				}
-				if *pppbool == true {
-					if ppplayer := packet.Layer(layers.LayerTypePPP); ppplayer != nil {
-						ppp, _ := ppplayer.(*layers.PPP)
-						fmt.Println(ppp)
-					}
-				}
-				if *pppoebool == true {
-					if pppoelayer := packet.Layer(layers.LayerTypePPPoE); pppoelayer != nil {
-						pppoe, _ := pppoelayer.(*layers.PPPoE)
-						fmt.Println(pppoe)
-					}
-				}
-				if *rudpbool == true {
-					if rudplayer := packet.Layer(layers.LayerTypeRUDP); rudplayer != nil {
-						rudp, _ := rudplayer.(*layers.RUDP)
-						fmt.Println(rudp)
-					}
-				}
-				if *sctpbool == true {
-					if sctplayer := packet.Layer(layers.LayerTypeSCTP); sctplayer != nil {
-						sctp, _ := sctplayer.(*layers.SCTP)
-						fmt.Println(sctp)
-					}
-				}
-				if *snapbool == true {
-					if snaplayer := packet.Layer(layers.LayerTypeSNAP); snaplayer != nil {
-						snap, _ := snaplayer.(*layers.SNAP)
-						fmt.Println(snap)
-					}
-				}
-				fmt.Printf("\n")
 			}
 		}
+		/*
+		if *ipbool == true {
+		if iplayer := packet.Layer(layers.LayerTypeIPv4); iplayer != nil {
+		ip4, _ := iplayer.(*layers.IPv4)
+		fmt.Printf("%d\t%d\t\t%d\n", ip4.SrcIP.String(), ip4.TTL, ip4.DstIP.String())
+		}
+		}
+
+		if *arpbool == true {
+		if arplayer := packet.Layer(layers.LayerTypeARP); arplayer != nil {
+		fmt.Println("This is in ARP packet!")
+		arp, _ := arplayer.(*layers.ARP)
+		fmt.Printf("From src MAC %d port %d\nto dst MAC %d port %d", arp.SourceHwAddress, arp.SourceProtAddress, arp.DstHwAddress, arp.DstProtAddress)
+		fmt.Println("-\t-\t-\t-\t-")
+		}
+		}
+		if *icmpv4bool == true {
+		if icmpv4layer := packet.Layer(layers.LayerTypeICMPv4); icmpv4layer != nil {
+		icmp, _ := icmpv4layer.(*layers.ICMPv4)
+		fmt.Println(icmp)
+		}
+		}
+		if *pppbool == true {
+		if ppplayer := packet.Layer(layers.LayerTypePPP); ppplayer != nil {
+		ppp, _ := ppplayer.(*layers.PPP)
+		fmt.Println(ppp)
+		}
+		}
+		if *pppoebool == true {
+		if pppoelayer := packet.Layer(layers.LayerTypePPPoE); pppoelayer != nil {
+		pppoe, _ := pppoelayer.(*layers.PPPoE)
+		fmt.Println(pppoe)
+		}
+		}
+		if *rudpbool == true {
+		if rudplayer := packet.Layer(layers.LayerTypeRUDP); rudplayer != nil {
+		rudp, _ := rudplayer.(*layers.RUDP)
+		fmt.Println(rudp)
+		}
+		}
+		if *sctpbool == true {
+		if sctplayer := packet.Layer(layers.LayerTypeSCTP); sctplayer != nil {
+		sctp, _ := sctplayer.(*layers.SCTP)
+		fmt.Println(sctp)
+		}
+		}
+		if *snapbool == true {
+		if snaplayer := packet.Layer(layers.LayerTypeSNAP); snaplayer != nil {
+		snap, _ := snaplayer.(*layers.SNAP)
+		fmt.Println(snap)
+		}
+		}
+		fmt.Printf("\n")
+		}
+		*/
 	}
 }
