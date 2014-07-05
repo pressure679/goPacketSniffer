@@ -108,7 +108,7 @@ func main() {
 	}
 
 	// For testing
-	var lc = flag.Bool("local", false, "Cap on local port")
+	var lc = flag.Bool("local", false, "Cap on local")
 	flag.Parse()
 
 	// sort newmacs.mac by using newmacs.occurence
