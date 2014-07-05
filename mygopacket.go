@@ -39,22 +39,6 @@ func (a mysort) Less(i, j int) bool {
 	return a[i] < a[j]
 }
 func main() {
-	/*
-	var ifs = flag.String("if", "eth0", "which interface to use")
-	var promiscbool = flag.Bool("promisc", false, "whether to capture in promiscuous mode or not")
-	var ipbool = flag.Bool("ip", false, "whether to show ip address of packets or not")
-	var ethernetbool = flag.Bool("ethernet", false, "whether to show MAC or not")
-	var portbool = flag.Bool("port", false, "whether to show port or not")
-	var payloadbool = flag.Bool("payload", false, "whether to show payload or not")
-	var icmpv4bool = flag.Bool("icmp", false, "whether to show packets are icmp or not")
-	var arpbool = flag.Bool("arp", false, "whether to show packets are arp or not")
-	var pppbool = flag.Bool("ppp", false, "whether to show packets are ppp or not")
-	var pppoebool = flag.Bool("pppoe", false, "whether to show packets are pppoe or not")
-	var rudpbool = flag.Bool("rudp", false, "whether to show packets are rudp or not")
-	var sctpbool = flag.Bool("sctp", false, "whether to show packets are sctp or not")
-	var snapbool = flag.Bool("snap", false, "whether to show packets are snap or not")
-	 */
-	flag.Parse()
 
 	// Start by listing reachable mac units
 	var newmacs []macs
@@ -124,8 +108,6 @@ func main() {
 	// For testing
 	var lc = flag.Bool("local", false, "Cap on local port")
 	flag.Parse()
-	// Code from here
-	
 
 	// sort newmacs.mac by using newmacs.occurence
 	// delete least occuring newmacs.mac that
@@ -152,6 +134,7 @@ func main() {
 			}
 		}
 
+		// Needs some minor changes, I'll get to it
 		// Choose which mac(s) to capture packets from
 		var nummacstocap uint8
 		var chosenmacs []uint8
@@ -166,7 +149,7 @@ func main() {
 		}
 	}
 	
-	// Edit from here!
+	// Needs major editing from here!
 	// Needs to save payload and know which MAC the payload belongs to.
 	// Save the data to RAM or HDD and decrypt/encrypt data for password recovery.
 	// The password recovery can be with or without ARP Poisoning, but should be if
