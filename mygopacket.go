@@ -14,6 +14,8 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Needs editing from line 179, read comment on line 154 to see what editing
+
 package main
 import (
 	"fmt"
@@ -150,6 +152,7 @@ func main() {
 	}
 	
 	// Needs major editing from here!
+	// Needs to capture only from mymacs narrowed down by last loops, and only from port 80.
 	// Needs to save payload and know which MAC the payload belongs to.
 	// Save the data to RAM or HDD and decrypt/encrypt data for password recovery.
 	// The password recovery can be with or without ARP Poisoning, but should be if
