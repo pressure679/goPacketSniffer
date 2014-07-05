@@ -173,6 +173,9 @@ func main() {
 	// I don't excatly know yet how wpa2 encryption works, but hopefully wpa2crypt.go will
 	// work, of course with a loop to go through different passwords & IV's.
 	
+	// Needs more editing than described above, I'm working on it, and
+	// you will probably get the idea, if not, feel free to contact me.
+	
 	// Start a packet capture on port 80.
 	// Capture 5000 packets & decrypt dump.
 	// Found password/key is stored in txt file.
