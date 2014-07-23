@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Needs editing from line 179, read comment on line 154 to see what editing
+// Needs editing at line 63
 
 package main
 
