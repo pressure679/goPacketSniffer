@@ -17,14 +17,19 @@
 // Needs editing from line 179, read comment on line 154 to see what editing
 
 package main
+
 import (
-	"fmt"
 	"code.google.com/p/gopacket"
 	"code.google.com/p/gopacket/pcap"
 	"code.google.com/p/gopacket/layers"
 	"encoding/hex"
 	"flag"
+	"time"
+	"os"
 )
+
+// Types & functions for adding new
+// macs & sorting them by occurence
 type macs struct {
 	occurence byte
 	mac string
@@ -40,168 +45,231 @@ func (a mysort) Swap(i, j int) {
 func (a mysort) Less(i, j int) bool {
 	return a[i] < a[j]
 }
-func main() {
 
-	// Start by listing reachable mac units
-	var newmacs []macs
-	var y byte = 0
-	handle, err0 := pcap.OpenLive("wlan0", 65535, true,	0)
+func writepacket(layer layers.Dot11) {
+	fo, err0 := os.Create("output.txt")
 	if err0 != nil {
 		panic(err0)
 	}
-	now := time.Now()
-	later := time.Now().Add(Time.Duration(15)*time.Second)
-	nowtwo := time.Now()
-	var changetime bool = true
-	var listmacs bool = true
-	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-	for packet := range packetSource.Packets() {
-		for listmacs {
-			if now.Second() >= 45 {
-				if nowtwo.Minute() != later.Minute() {
-					changetime = false
-				}
-				if changetime == true {
-					later.Add(time.Duration(1)*time.Minute)
-					later.Sub(time.Duration(75)*time.Second)
-				}
-			}
-			now = time.Now()
-			if now <= later {
-				listmacs = false
-			}
-			if ethlayer := packet.Layer(layers.LayerTypeEthernet); ethlayer != nil {
-				eth, _ := ethlayer.(*layers.Ethernet)
-				if macsstr[99] == "" {
-					for x := 0; x < 100; x++ {
-						if newmacs[x].mac == "" {
-							continue
-						}
-						if eth.SrcMAC.String() == newmacs.mac[x] {
-							newmacs.occurence[x]++
-							break
-						}	else {
-							if newmacs[x].mac == "" {
-								newmacs[x].mac = eth.SrcMAC.String()
-								newmacs[x].related = eth.DstMAC.String()
-								fmt.Println(y, " ", newmacs.mac[y])
-								y++
-								break
-							}
-						}
-						if eth.DstMAC.String() == newmacs.mac[x] {
-							break
-							newmacs.occurence[x]++
-						} else {
-							if newmacs.mac[x] == "" {
-								newmacs.mac[x] = eth.DstMAC.String()
-								newmacs.related[x] = eth.SrcMAC.String()
-								fmt.Println(y, " ", newmacs.mac[y])
-								y++
-								break
-							}
-						}
-					}
-				}	
-			}
+	defer func() {
+		if err1 := fo.Close(); err1 != nil {
+			panic(err1)
 		}
+	}()
+	fo.Write(layer.BaseLayer.Contents)
+}
+
+// Needs to take inthe right arguement as defined at line 254
+func readpacket(desiredmac string, dot11layer layers.LayerTypeDot11) {
+	/*
+	if ethlayer := packet.Layer(layers.LayerTypeEthernet); ethlayer != nil {
+	eth, _ := ethlayer.(*layers.Ethernet)
+	//		 if eth.SrcMAC.String() == desiredmac |
+	//		 eth.DstMAC.String() == desiredmac {
+	fmt.Printf("%s\t\t%s\n", eth.SrcMAC.String(), eth.DstMAC.String())
+	}
+	if tcplayer := packet.Layer(layers.LayerTypeTCP); tcplayer != nil {
+	// Get actual TCP data from this layer
+	tcp, _ := tcplayer.(*layers.TCP)
+	fmt.Printf("TCP: %s\t\t%d\t%s\n", tcp.SrcPort.String(), tcp.DstPort.String())
+	} else if udplayer := packet.Layer(layers.LayerTypeUDP); udplayer != nil {
+	udp, _ := udplayer.(*layers.UDP)
+	fmt.Printf("UDP: %s\t\t%d\t%s\n", udp.SrcPort.String(), udp.DstPort.String())
+	}
+	if applayer := packet.ApplicationLayer(); applayer != nil {
+	// fmt.Println("payload: ", hex.Dump(applayer.Payload()))
+	fmt.Println("payload: ", hex.Dump(applayer.Payload()))
+	}
+	if dot1qlayer := packet.Layer(layers.LayerTypeDot1Q); dot1qlayer != nil {
+	dot1q, _ := dot1qlayer.(*layers.Dot1Q)
+	fmt.Println("dot1q baselayer\n", dot1q.BaseLayer)
+	}
+	*/
+	dot11, _ := dot11layer.(*layers.Dot11)
+	fmt.Println("dot11 address 1\t", dot11.Address1.String())
+	fmt.Println("dot11 address 2\t", dot11.Address2.String())
+	fmt.Println("dot11 address 3\t", dot11.Address3.String())
+	fmt.Println("dot11 address 4\t", dot11.Address4.String())
+	fmt.Println("dot11 type\t-\t", dot11.Type)
+	fmt.Println("dot11 content\n", hex.Dump(dot11.BaseLayer.Contents))
+	fmt.Println("dot11 payload\n", hex.Dump(dot11.BaseLayer.Payload))
+	writepacket(dot11)
+	/*
+	fmt.Println("dot11 content\t", string(dot11.BaseLayer.Contents))
+	fmt.Println("dot11 content\t", dot11.BaseLayer.Contents)
+	fmt.Println("dot11 payload\t", string(dot11.BaseLayer.Payload))
+	fmt.Println("dot11 payload\t", dot11.BaseLayer.Payload)
+	*/
+}
+
+func main() {
+
+	// Specify which interface to use
+	var ifs = flag.String("if", "wlan1", "which interface to use")
+
+	handle0, err0 := pcap.NewInactiveHandle(*ifs);
+	if err0 != nil {
+		panic(err0)
+	}
+	err1 := handle0.SetRFMon(true)
+	if err1 != nil {
+		panic(err1)
+	}
+	err2 := handle0.SetPromisc(true)
+	if err2 != nil {
+		panic(err2)
+	}
+	err3 := handle0.SetSnapLen(1600)
+	if err3 != nil {
+		panic(err3)
+	}
+	err4 := handle0.SetTimeout(time.Duration(1) * time.Second)
+	if err4 != nil {
+		panic(err4)
+	}
+	/*
+	mytssrc := pcap.TimestampSource
+	err5 := handle0.SetTimestampSource(mytssrc)
+	if err5 != nil {
+	panic(err5)
+	}
+	*/
+	handle1, err6 := handle0.Activate()
+	if err6 != nil {
+		panic(err6)
 	}
 
 	// For testing
-	var lc = flag.Bool("local", false, "Cap on local")
-	flag.Parse()
+	// var lc = flag.Bool("local", false, "Capture on privat hardware")
+	// flag.Parse()
+	// var wlan0 string = "34:23:87:21:1e:8d"
 
+	// This is the mac address to capture from
+	var wlan1 string = "00:c0:ca:7e:b8:6a"
+
+	/*
 	// sort newmacs.mac by using newmacs.occurence
 	// delete least occuring newmacs.mac that
 	// are newmacs.related to a high occuring newmacs.mac
 	if *lc != true {
-		var nummacs uint8
-		sort.Sort(mysort(mymacs))
-		for x := 99; x >= 0; x-- {
-			if mymacs[x].mac == "" {
-				continue
-			} else {
-				nummacs = uint8(x)
-			}
-			for y := 0; y < 100; y++ {
-				if mymacs[x].mac == mymacs[y].related {
-					for i := y; i < 99; i++ {
-						mymacs[y].mac = mymacs[y - 1].mac
-						mymacs[y].related = mymacs[y - 1].related
-						mymacs[y].occurence = mymacs[y - 1].occurence
-					}
-				}
-				// Print mac units by occurence
-				fmt.Println(x, " ", mymacs[x].mac)
-			}
-		}
+	// Start by listing reachable mac units
+	var newmacs []macs
+	var y byte = 0
 
-		// Needs some minor changes, I'll get to it
-		// Choose which mac(s) to capture packets from
-		var nummacstocap uint8
-		var chosenmacs []uint8
-		fmt.Printf("Select number of macs to capture: ")
-		fmt.Scanf("%d", nummacstocap)
-		for x := 0; x <= int(nummacstocap); x++ {
-			fmt.Printf("Choose which mac(s) to capture from ")
-			fmt.Scanf("%d", chosenmacs[x])
-		}
-		for x := 0; x <= len(chosenmacs); x++ {
-			
-		}
+	// Capture packets for 15 sec's
+	// for mac capture
+	now := time.Now()
+	later := time.Now().Add(time.Duration(15) * time.Second)
+	nowtwo := time.Now()
+	var changetime bool = true
+	var listmacs bool = true
+	packetSource := gopacket.NewPacketSource(handle1, handle1.LinkType())
+	for packet := range packetSource.Packets() {
+	for listmacs {
+	if now.Second() >= 45 {
+	if nowtwo.Minute() != later.Minute() {
+	changetime = false
 	}
+	if changetime == true {
+	addthis := time.Duration(1)
+	later.Add(addthis * time.Minute)
+	subthis := time.Duration(75)
+	later.Sub(subthis * time.Second)
+	}
+	}
+	now = time.Now()
+	if now <= later {
+	listmacs = false
+	}
+	if ethlayer := packet.Layer(layers.LayerTypeEthernet); ethlayer != nil {
+	eth, _ := ethlayer.(*layers.Ethernet)
+	if macsstr[99] == "" {
+	for x := 0; x < 100; x++ {
+	if newmacs[x].mac == "" {
+	continue
+	}
+	if eth.SrcMAC.String() == newmacs.mac[x] {
+	newmacs.occurence[x]++
+	break
+	}	else {
+	if newmacs[x].mac == "" {
+	newmacs[x].mac = eth.SrcMAC.String()
+	newmacs[x].related = eth.DstMAC.String()
+	fmt.Println(y, " ", newmacs.mac[y])
+	y++
+	break
+	}
+	}
+	if eth.DstMAC.String() == newmacs.mac[x] {
+	break
+	newmacs.occurence[x]++
+	} else {
+	if newmacs.mac[x] == "" {
+	newmacs.mac[x] = eth.DstMAC.String()
+	newmacs.related[x] = eth.SrcMAC.String()
+	fmt.Println(y, " ", newmacs.mac[y])
+	y++
+	break
+	}
+	}
+	}
+	}	
+	}
+	}
+	}
+	var nummacs uint8
+	sort.Sort(mysort(mymacs))
+	for x := 99; x >= 0; x-- {
+	if mymacs[x].mac == "" {
+	continue
+	} else {
+	nummacs = uint8(x)
+	}
+	for y := 0; y < 100; y++ {
+	if mymacs[x].mac == mymacs[y].related {
+	for i := y; i < 99; i++ {
+	mymacs[y].mac = mymacs[y - 1].mac
+	mymacs[y].related = mymacs[y - 1].related
+	mymacs[y].occurence = mymacs[y - 1].occurence
+	}
+	}
+	// Print mac units by occurence
+	fmt.Println(x, " ", mymacs[x].mac)
+	}
+	}
+
+	// Choose which mac(s) to capture packets from
+	var nummacstocap uint8
+	var chosenmacs []uint8
+	fmt.Printf("Select number of macs to capture: ")
+	fmt.Scanf("%d", nummacstocap)
+	for x := 0; x <= int(nummacstocap); x++ {
+	fmt.Printf("Choose which mac(s) to capture from ")
+	fmt.Scanf("%d", chosenmacs[x])
+	}
+	for x := 0; x <= len(chosenmacs); x++ {
 	
-	// Needs major editing from here!
-	// Needs to capture only from mymacs narrowed down by last loops, and only from port 80.
-	// Needs to save payload and know which MAC the payload belongs to.
-	// Save the data to RAM or HDD and decrypt/encrypt data for password recovery.
-	// The password recovery can be with or without ARP Poisoning, but should be if
-	// you intend to let the AP decrypt the data for you.
-	
-	// The encrypt/decrypt AI is going to be tricky. I have a file of
-	// 500 most common passwords & files with months, years & dates + 
-	// 50 most used baby names, these should work as a 1st option cracking,
-	// along with some dumbass passwords like "god" or "sexy".
-	// You know, just have fun implementing an AI cracker, and notify me if you have an idea.
-	
-	// Encryption is for encrypting html tags with different passwords & IV's,
-	// and see if the encryption matches a string in the payload from packets
-	
-	// You should either decrypt or encrypt, up to you,
-	// I'm going to test both and see which one is faster.
-	
-	// I don't excatly know yet how wpa2 encryption works, but hopefully wpa2crypt.go will
-	// work, of course with a loop to go through different passwords & IV's.
-	
-	// Needs more editing than described above, I'm working on it, and
-	// you will probably get the idea, if not, feel free to contact me.
-	
+	}
+	}
+	*/
 	// Start a packet capture on port 80.
 	// Capture 5000 packets & decrypt dump.
 	// Found password/key is stored in txt file.
 	if err0 != nil {
 		panic(err0)
 	}
-	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-	for packet := range packetSource.Packets() { 
-		if ethlayer := packet.Layer(layers.LayerTypeEthernet); ethlayer != nil {
-			eth, _ := ethlayer.(*layers.Ethernet)
-			for x := 0; x <= int(nummacstocap); x++ {
-				if eth.SrcMAC.String() == || eth.DstMAC.String()
-				fmt.Printf("%d\t\t%d\n", eth.SrcMAC.String(), eth.DstMAC.String())
+	packetSource := gopacket.NewPacketSource(handle1, handle1.LinkType())
+	for packet := range packetSource.Packets() {
+		if dot11layer := packet.Layer(layers.LayerTypeDot11); dot11layer != nil {
+			/*
+			if *lc == true {
+			for x := 0; x < len(mymacs); x++ {
+			readpacket(mymacs[x].mac, packet)
 			}
-			if tcplayer := packet.Layer(layers.LayerTypeTCP); tcplayer != nil {
-				// Get actual TCP data from this layer
-				tcp, _ := tcplayer.(*layers.TCP)
-				fmt.Printf("TCP: %d\t\t%d\t%d\n", tcp.SrcPort, tcp.DstPort)
-			} else if udplayer := packet.Layer(layers.LayerTypeUDP); udplayer != nil {
-				udp, _ := udplayer.(*layers.UDP)
-				fmt.Printf("UDP: %d\t\t%d\t%d\n", udp.SrcPort, udp.DstPort)
-				if applayer := packet.ApplicationLayer(); applayer != nil {
-					// fmt.Println("payload: ", hex.Dump(applayer.Payload()))
-					fmt.Println("payload: ", hex.Dump(applayer.Payload()))
-				}
-			}
+			} else {
+			*/
+			// readpacket(wlan0, packet)
+			readpacket(wlan1, dot11layer)
 		}
 	}
 }
