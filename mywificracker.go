@@ -12,8 +12,6 @@ import (
 	"bytes"
 )
 
-// code uses .pcap file from http://wiki.wireshark.org/HowToDecrypt802.11 to decrypt
-
 func main() {
 	password := []byte("Induction")
 	ssid := []byte("Coherer")
@@ -46,7 +44,21 @@ func main() {
 		fmt.Println("ptk\t", ptk)
 		for pkt := range pktsrc.Packets() {
 			// Need to do something here
-			pkt, _ = decrypt([]byte(ptk), pkt)
+			data := pkt.Data()
+			if dot11layer := pkt.Layer(layers.LayerTypeDot11); dot11layer != nil {
+				dot11, _ := dot11layer.(*layers.Dot11)
+
+				// data???
+				decr, err := decrypt([]byte(ptk), data)
+				if err != false {
+					panic(err)
+				}
+				fmt.Println("dot11 proto:\n", dot11.Proto)
+				fmt.Println("dot11 data:\n", decr)
+			}
+      if err != nil {
+        panic(err)
+      }
 			if iplayer := pkt.Layer(layers.LayerTypeIPv4); iplayer != nil {
 				ip, _ := iplayer.(*layers.IPv4)
 				fmt.Printf("%s\t\t%d\t%s\n", ip.SrcIP.String(), ip.TTL, ip.DstIP.String())
@@ -62,10 +74,7 @@ func main() {
 				fmt.Println("payload:")
 				fmt.Printf(hex.Dump(applayer.Payload()))
 			}
-			if dot11layer := pkt.Layer(layers.LayerTypeDot11); dot11layer != nil {
-				dot11, _ := dot11layer.(*layers.Dot11)
-				fmt.Println("dot11 proto:\n", dot11.Proto)
-			}
+
 		}
 	}
 }
