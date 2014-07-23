@@ -29,8 +29,6 @@ import (
 	"bytes"
 )
 
-
-
 func HashPassword(password, salt []byte, keylen int) []byte {
   return pbkdf2.Key(password, salt, 4096, keylen, sha1.New)
 }
