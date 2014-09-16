@@ -15,9 +15,10 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package main
+
 import (
 	"fmt"
-	"encoding/hex"
+	// "encoding/hex"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/pbkdf2"
@@ -26,122 +27,190 @@ import (
 	"code.google.com/p/gopacket/pcap"
 	"code.google.com/p/gopacket/layers"
 	"bytes"
+	"flag"
 )
 
+// anonce, snonce, amac, smac is retrieved.
+	// ssid, file & password is entered as argument.
+	// pmk, pairwise master key, is derived from
+	// password with pbkdf2.
+
+	// ptkgen method at line 192
+	// does not work.
+	// use my pyptkgen.py
+
+// ptk is entered at line 90.
+
+func getPkts(file string) {
+	// open offline capture with
+	// file as source.
+	handle, err := pcap.OpenOffline(string(file))
+	if err != nil { panic(err) }
+	pktsrc := gopacket.NewPacketSource(handle, handle.LinkType())
+	return pktsrc.Packets()
+}
+
 func main() {
-	password := []byte("Induction")
-	ssid := []byte("Coherer")
-	fmt.Println("password     ", string(password))
-	fmt.Println("salt str    ", string(ssid))
-	pmk := string(HashPassword(password, ssid, 32))
-	fmt.Printf("pmk          %x\n", pmk)
+	password := flag.String("password", "", "The password or key for decryption")
+	ssid := flag.String("ssid", "", "The essid or key for decryption")
+	file := flag.String("file", "", "The file to read data from")
+	flag.Parse()
+
+ 	// pmk - pairwise master key
+	// is dervied from password with
+	// ssid as salt using pbkdf2.
+	pmkbyte := HashPassword(password, ssid, 32)
+	pmk := string(pmkbyte)
+
+	// print objects
+	fmt.Println("salt str:   ", *ssid)
+	fmt.Println("password:   ", *password)
+	fmt.Printf("file:        %s\n", *file)
+	fmt.Printf("pmk:         %x\n", pmk)
+
+	// objects that are retrieved from EAPOL
+	// packets in pcap file.
+	// These are used to derive ptk
+	// from pmk, which is derived from
+	// password with pbkdf2.
 	var anonce string
 	var snonce string
 	var amac string
 	var smac string
-	msgnum := -1
-	if handle, err := pcap.OpenOffline("wpa-Induction.pcap"); err != nil {
-		panic(err)
-	} else {
-		pktsrc := gopacket.NewPacketSource(handle, handle.LinkType())
-		for pkt := range pktsrc.Packets() {
-				if eapollayer := pkt.Layer(layers.LayerTypeEAPOL); eapollayer != nil {
-				msgnum++
-				if msgnum == 0 {
-					amac = string(pkt.Data()[40:46])
-					smac = string(pkt.Data()[28:34])
-					anonce = string(pkt.Data()[73:105])
-				} else if msgnum == 1 {
-					snonce = string(pkt.Data()[73:105])
-				}
+	var msgnum int = -1
+
+	// open offline capture with
+	// file as source.
+	pkts := getPkts(*file)
+
+	// loop through all packets in pcap file to retrieve
+	// nonces & macs to derive ptk from pmk, which is
+	// derived from password with pbkdf2.
+
+	for pkt := range pkts {
+
+	// extract following:
+	// anonce, snonce,
+	// amac, snonce,
+	// extract ssid yourself,
+	// or with my pcapreader.go
+		if EAPOLLayer := pkt.Layer(layers.LayerTypeEAPOL); EAPOLLayer != nil {
+	msgnum++
+			if msgnum == 0 {
+				amac = string(pkt.Data()[40:46])
+				smac = string(pkt.Data()[28:34])
+				anonce = string(pkt.Data()[73:105])
+	} else if msgnum == 1 {
+				snonce = string(pkt.Data()[73:105])
 			}
 		}
-		ptk := string(PTKGen(anonce, snonce, amac, smac, pmk))
-		fmt.Println("ptk\t", ptk)
-		for pkt := range pktsrc.Packets() {
-			// Need to do something here
-			data := pkt.Data()
-			if dot11layer := pkt.Layer(layers.LayerTypeDot11); dot11layer != nil {
-				dot11, _ := dot11layer.(*layers.Dot11)
+	}
 
-				// data???
-				decr, err := decrypt([]byte(ptk), data)
-				if err != false {
-					panic(err)
-				}
-				fmt.Println("dot11 proto:\n", dot11.Proto)
-				fmt.Println("dot11 data:\n", decr)
-			}
-      if err != nil {
-        panic(err)
-      }
-			if iplayer := pkt.Layer(layers.LayerTypeIPv4); iplayer != nil {
-				ip, _ := iplayer.(*layers.IPv4)
-				fmt.Printf("%s\t\t%d\t%s\n", ip.SrcIP.String(), ip.TTL, ip.DstIP.String())
-			}
-			if tcplayer := pkt.Layer(layers.LayerTypeTCP); tcplayer != nil {
-				tcp, _ := tcplayer.(*layers.TCP)
-				fmt.Printf("TCP: %d\t\t%d\t%d\n", tcp.SrcPort, tcp.DstPort)
-			} else if udplayer := pkt.Layer(layers.LayerTypeUDP); udplayer != nil {
-				udp, _ := udplayer.(*layers.UDP)
-				fmt.Printf("UDP: %d\t\t%d\t%d\n", udp.SrcPort, udp.DstPort)
-			}
-			if applayer := pkt.ApplicationLayer(); applayer != nil {
-				fmt.Println("payload:")
-				fmt.Printf(hex.Dump(applayer.Payload()))
-			}
+	// here you write ptk
+	ptk := []byte("1602d720fc46d33ae77386cde5718a4d0efe5c18cdf9cba42b606424fa992ca0a69e3e67a6d9f080")
+	fmt.Printf("ptk length:   %d\nptk          %s\namac:        %x\nsmac:        %x\nanonce:      %x\nsnonce:      %x\n", len(ptk), string(ptk), amac, smac, anonce, snonce)
 
+	pkts := getPkts(*file)
+
+	// loop through all packets in pcap file for decrypt.
+	for pkt := range pkts {
+		data := pkt.Data()
+		fmt.Printf("%s\n", string(data))
+
+		// decrypt the next 5 layers in each "if" statements
+		// with aes.cbc pkcs#7 unpadding.
+		// create ptk from pmk, nonces and macs yourself.
+		// ptkgen method does not work.
+		if Dot11Layer := pkt.Layer(layers.LayerTypeDot11); Dot11Layer != nil {
+			dot11, _ := Dot11Layer.(*layers.Dot11)
+
+			// data???
+			fmt.Println("dot11 proto:\n", dot11.Proto)
+			fmt.Printf("dot11 contents:\n%s\n", dot11.Contents)
+			fmt.Printf("dot11 payload:\n%s\n", dot11.Payload)
+			fmt.Printf("dump:\n%s\n", pkt.Dump())
+			decr, _ := decrypt(ptk, data)
+			fmt.Println("dot11 data decrypted:\n", decr)
+		}
+		if Dot11DataLayer := pkt.Layer(layers.LayerTypeDot11Data); Dot11DataLayer != nil {
+			dot11data, _ := Dot11DataLayer.(*layers.Dot11Data)
+			payload := dot11data.BaseLayer.Payload
+			contents := dot11data.BaseLayer.Contents
+			fmt.Println("dot11data payload:\n", payload)
+			fmt.Println("dot11data contents:\n", contents)
+			decr0, _ := decrypt(ptk, payload)
+			fmt.Println("dot11data payload:\n", decr0)
+			decr1, _ := decrypt(ptk, contents)
+			fmt.Println("dot11data content:\n", decr1)
+		}
+		if IPLayer := pkt.Layer(layers.LayerTypeIPv4); IPLayer != nil {
+			ip, _ := IPLayer.(*layers.IPv4)
+			fmt.Printf("%s\t\t%d\t%s\n", ip.SrcIP.String(), ip.TTL, ip.DstIP.String())
+		}
+		if TCPLayer := pkt.Layer(layers.LayerTypeTCP); TCPLayer != nil {
+			tcp, _ := TCPLayer.(*layers.TCP)
+			fmt.Printf("TCP: %d\t\t%d\t%d\n", tcp.SrcPort, tcp.DstPort)
+		} else if UDPLayer := pkt.Layer(layers.LayerTypeUDP); UDPLayer != nil {
+			udp, _ := UDPLayer.(*layers.UDP)
+			fmt.Printf("TCP: %d\t\t%d\t%d\n", udp.SrcPort, udp.DstPort)
 		}
 	}
 }
+// pkcs#7 unpadding
 func unpad(in []byte) []byte {
-  if len(in) == 0 {
-    return nil
-  }
-  padding := in[len(in)-1]
-  if int(padding) > len(in) || padding > aes.BlockSize {
-    return nil
-  } else if padding == 0 {
-    return nil
-  }
-  for i := len(in) - 1; i > len(in)-int(padding)-1; i-- {
-    if in[i] != padding {
-      return nil
-    }
-  }
-  return in[:len(in) - int(padding)]
+	if len(in) == 0 {
+		return nil
+	}
+	padding := in[len(in)-1]
+	if int(padding) > len(in) || padding > aes.BlockSize {
+		return nil
+	} else if padding == 0 {
+		return nil
+	}
+	for i := len(in) - 1; i > len(in)-int(padding)-1; i-- {
+		if in[i] != padding {
+			return nil
+		}
+	}
+	return in[:len(in) - int(padding)]
 }
+// aes-cbc decrypter with pkcs#7 unpadding
 func decrypt(k, in []byte) ([]byte, bool) {
 	if len(in) < aes.BlockSize {
 		panic("ciphertext too short")
 	}
 	iv := in[:aes.BlockSize]
 	in = in[aes.BlockSize:]
-  if len(in) % aes.BlockSize != 0 {
+	if len(in) % aes.BlockSize != 0 {
 		fmt.Println("len(in) mod aes.blocksize ==", len(in) % aes.BlockSize)
-    return nil, false
-  }
-  block, err := aes.NewCipher(k)
-  if err != nil {
-    return nil, false
-  }
-  cbc := cipher.NewCBCDecrypter(block, iv)
-  cbc.CryptBlocks(in, in)
-  out := unpad(in)
-  if out == nil {
+		return nil, false
+	}
+	block, err := aes.NewCipher(k)
+	if err != nil {
+		return nil, false
+	}
+	cbc := cipher.NewCBCDecrypter(block, iv)
+	cbc.CryptBlocks(in, in)
+	out := unpad(in)
+	if out == nil {
 		fmt.Println("out == nil")
-    return nil, false
-  }
-  return out, true
+		return nil, false
+	}
+	return out, true
 }
+// for clearing pmk, ssid & password you've provided,
+// but not used atm.
 func clear(b []byte) {
-  for i := 0; i < len(b); i++ {
-    b[i] = 0;
-  }
+	for i := 0; i < len(b); i++ {
+		b[i] = 0;
+	}
 }
+// create pmk from password with pbkdf2
 func HashPassword(password, salt []byte, keylen int) []byte {
-  return pbkdf2.Key(password, salt, 4096, keylen, sha1.New)
+	return pbkdf2.Key(password, salt, 4096, keylen, sha1.New)
 }
+// This ptk gen does not work correctly,
+// instead just write ptk at line 91.
 func PTKGen(anonce, snonce, amac, smac, pmk string) []byte {
 	b := amac + smac + snonce + anonce
 	var ptk []byte
