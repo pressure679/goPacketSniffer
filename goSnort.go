@@ -1,5 +1,5 @@
 //    This software is for intended for WPA-2 cracking, with brute force - Need IP-checker and PTK-generator
-//    Copyright (C) 2014  Vittus Peter Ove Maqe Mikiassen
+//    Copyright (C) 2015  Vittus Peter Ove Maqe Mikiassen
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
