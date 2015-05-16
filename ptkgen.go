@@ -57,12 +57,7 @@ func CustomPRF512(key, a, b, ssid string) []byte {
 		passwordstr := "Pairwise key expansion" + string(nullbyte) + b + string(i)
 		password := []byte(passwordstr)
 
-		// hmacsha1 = hmac.new(key,A+chr(0x00)+B+chr(i),sha)
-		//salt := []byte(pmk)
-		//ptk1 = HashPassword(salt, password, 20)
-
 		mysha1 := sha1.New()
-		// hmacsha1 := hmac.New(sha1.New, password)
 		mysha1.Write([]byte(key))
 		ptk1 := HashPassword(password, []byte(ssid))
 		
