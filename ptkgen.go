@@ -17,7 +17,7 @@
 // but I guess something is wrong;
 // I abandon this project from now on, everything else is ready, the PTK just needs to be made (you can use another software to make this)
 // maybe the null byte for the passwordstr is not made right
-// maybe the keylen for HashPassword is right (128 bit TKIP and 4 iterations, 256 bit for AES and 5 iterations)
+// maybe the keylen for HashPassword is right (128 bit TKIP and 4 iterations, 256 bit for CCMP and 3 iterations)
 // maybe my min() and max() does not return the same as Python's
 // 
 // desired ptk[0:16]:
