@@ -12,10 +12,20 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// It should return the same PTK as in http://stackoverflow.com/questions/12018920/wpa-handshake-with-python-hashing-difficulties
+// but I guess something is wrong;
+// I abandon this project from now on, everything else is ready, the PTK just needs to be made (you can use another software to make this)
+// maybe the null byte for the passwordstr is not made right
+// maybe the keylen for HashPassword is right (128 bit TKIP and 4 iterations, 256 bit for AES and 5 iterations)
+// maybe my min() and max() does not return the same as Python's
+// 
+// desired ptk[0:16]:
+// bf49 a95f 0494 f444 2716 2f38 696e f8b6
+
 package main
 import (
 	"fmt"
-	//"crypto/hmac"
 	"crypto/sha1"
 	"crypto/pbkdf2"
 	"encoding/hex"
