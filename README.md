@@ -12,3 +12,13 @@ https://patents.google.com/patent/US8447978B2/en
 - https://tools.ietf.org/html/rfc3268
 - https://en.wikipedia.org/wiki/IEEE_802.11i-2004
 - https://en.wikipedia.org/wiki/CCMP_(cryptography)
+- https://en.wikipedia.org/wiki/Advanced_Encryption_Standard 
+- https://en.wikipedia.org/wiki/SHA-1 
+- https://en.wikipedia.org/wiki/Pseudorandom_number_generator 
+- https://en.wikipedia.org/wiki/PBKDF2 
+- https://en.wikipedia.org/wiki/Initialization_vector 
+- https://en.wikipedia.org/wiki/Block_cipher 
+- https://en.wikipedia.org/wiki/Stream_cipher 
+- https://en.wikipedia.org/wiki/Padding_(cryptography)#PKCS#5_and_PKCS#7
+- https://en.wikipedia.org/wiki/Bitwise_operation#XOR 
+- https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_block_chaining_(CBC)
