@@ -104,8 +104,9 @@ func main() {
 	if err != nil { panic(err) }
 	data, err := ioutil.ReadFile(osFile.Name())
 	if err = osFile.Close(); err != nil { panic(err) }
-	// encrypted, err := encrypt(pmk, string(data))
-	encrypted, err := encrypt(ptk[32:48], string(data))
+	datawithpadding, err := PadToBlockSize(string(data))
+	if err != nil { panic(err) }
+	encrypted, err := encrypt(ptk[32:48], datawithpadding)
 	if err != nil { panic(err) }
 	fmt.Println("Encrypted data:")
 	fmt.Println("* String:")
@@ -175,6 +176,19 @@ func clear(b []byte) {
 	for i := 0; i < len(b); i++ { b[i] = 0; }
 }
 
+func PadToBlockSize(input string) (padding string, err error) {
+	paddingNeeded := aes.BlockSize - (len(input) % aes.BlockSize)
+	if paddingNeeded >= 256 { return "", errors.New("aes.BlockSize - len(input) % aes.BlockSize >= 256") }
+
+	if paddingNeeded == 0 { paddingNeeded = aes.BlockSize }
+
+	// Inefficient, once again, this is an example only!
+	for i := 0; i < paddingNeeded; i++ {
+		input += string(byte(paddingNeeded))
+	}
+	return input, nil
+}
+
 // From https://gist.github.com/mickelsonm/e1bf365a149f3fe59119
 func encrypt(key []byte, message string) (encmess string, err error) {
 	plainText := []byte(message)
@@ -188,8 +202,10 @@ func encrypt(key []byte, message string) (encmess string, err error) {
 	iv := cipherText[:aes.BlockSize]
 	if _, err = io.ReadFull(rand.Reader, iv); err != nil { return }
 
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(cipherText[aes.BlockSize:], plainText)
+	// stream := cipher.NewCFBEncrypter(block, iv)
+	blockmode := cipher.NewCBCEncrypter(block, iv)
+	// stream.XORKeyStream(cipherText[aes.BlockSize:], plainText)
+	blockmode.CryptBlocks(cipherText[aes.BlockSize:], plainText)
 
 	//returns to base64 encoded string
 	encmess = base64.URLEncoding.EncodeToString(cipherText)
@@ -212,9 +228,11 @@ func decrypt(key []byte, securemess string) (decodedmess string, err error) {
 	iv := cipherText[:aes.BlockSize]
 	cipherText = cipherText[aes.BlockSize:]
 
-	stream := cipher.NewCFBDecrypter(block, iv)
+	// stream := cipher.NewCFBDecrypter(block, iv)
+	blockmode := cipher.NewCBCDecrypter(block, iv)
 	// XORKeyStream can work in-place if the two arguments are the same.
-	stream.XORKeyStream(cipherText, cipherText)
+	// stream.XORKeyStream(cipherText, cipherText)
+	blockmode.CryptBlocks(cipherText, cipherText)
 
 	decodedmess = string(cipherText)
 	return
