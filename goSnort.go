@@ -1,5 +1,5 @@
 //    This software is for intended for WPA-2 cracking, with brute force - Need IP-checker and PTK-generator
-//    Copyright (C) 2015  Vittus Peter Ove Maqe Mikiassen
+//    Copyright (C) 2023  Vittus Peter Ove Maqe Mikiassen
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -16,9 +16,9 @@
 package main
 import (
 	"fmt"
-	"code.google.com/p/gopacket"
-	"code.google.com/p/gopacket/pcap"
-	"code.google.com/p/gopacket/layers"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/layers"
 	"flag"
 	"encoding/hex"
 	"time"
