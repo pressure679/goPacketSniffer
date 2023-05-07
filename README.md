@@ -1,5 +1,5 @@
 # goPacketSniffer
-
+# Go get is deprecated from version 1.17, so to use github packages 1.16.n is recommended (otherwise see god mod tidy go mod init)
 Simple sniffer in Golang/Go
 
 There is a WPA2-AES encrypter and decrypter added for another coder to experiment with cryptoanalysis of hashes, PRNG's, and the encryption protocol.
